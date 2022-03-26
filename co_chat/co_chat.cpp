@@ -41,8 +41,7 @@ class chat {
 
 public:
   chat(char *addr, char *port, char *remote_addr,
-       char *remote_port)
-      : remote_sock(ctx) {
+       char *remote_port) {
 
     tcp::resolver resolver(ctx);
     basic_resolver_entry<tcp> listen_endpoint;
@@ -61,6 +60,7 @@ private:
   awaitable<void> sender(tcp::endpoint remote) {
 
     for (;;) {
+      tcp::socket remote_sock(ctx);
 
       auto [error] = co_await remote_sock.async_connect(
           remote, as_tuple(use_awaitable));
@@ -80,6 +80,7 @@ private:
 
       std::string data;
       while (connected) {
+        // Read a string from stdin (non-blocking)
         struct pollfd input[1] = {{.fd = 0, .events = POLLIN}};
         if (poll(input, 1, 100 /* timeout in ms */)) {
           char c;
@@ -106,22 +107,21 @@ private:
           co_await acceptor.async_accept(as_tuple(use_awaitable));
 
       if (!error) {
-        std::string str;
+        std::string data;
 
         for (;;) {
           auto [error, len] = co_await async_read_until(
-              client, dynamic_buffer(str), boost::regex("\r\n"),
+              client, dynamic_buffer(data), boost::regex("\r\n"),
               as_tuple(use_awaitable));
 
-          if (error ==
-              boost::asio::error::eof) { // remote has disconnected
-            remote_sock.close();
+          if (error == boost::asio::error::eof) {
+            // remote has disconnected
             connected = false;
             break;
           }
 
-          std::cout << client.remote_endpoint() << "> " << str;
-          str.clear();
+          std::cout << client.remote_endpoint() << "> " << data;
+          data.clear();
         }
       } else {
         std::cerr << "Accept failed: " << error.message() << "\n";
@@ -131,7 +131,6 @@ private:
 
   // Member variables (shared between coroutines)
   io_context ctx;
-  tcp::socket remote_sock;
   bool connected = false;
 };
 
