@@ -2,8 +2,8 @@
 // echo_server_async.cpp
 // ---------------------
 //
-// g++-11 -I/usr/local/boost_1_78_0/include -fcoroutines -std=c++20
-// -Wall -Werror echo_server_async.cpp -o async -l pthread
+// g++-11 -I/usr/local/boost_1_78_0/include -Wall -Werror
+// echo_server_async.cpp -o async -l pthread
 //
 
 #include <boost/asio.hpp>
